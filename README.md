@@ -1,5 +1,4 @@
 # 🎨 Flux ComfyUI Installer - Ultimate AI Image Generation Setup
-
 <div align="center">
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/your-repo/flux-comfyui-installer)
@@ -7,7 +6,7 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue.svg)](https://github.com/your-repo/flux-comfyui-installer)
 
-**Automated installer for ComfyUI with Flux models - Get up and running in minutes!**
+**Automated Python installer for ComfyUI with Flux models - Get up and running in minutes!**
 
 [🚀 Quick Start](#-quick-start) • [📖 Documentation](#-documentation) • [🎮 User Guide](#-using-comfyui-with-flux) • [🔧 Troubleshooting](#-troubleshooting) • [🤝 Community](#-community--support)
 
