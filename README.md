@@ -14,9 +14,6 @@
 </div>
 
 ---
-
-## 📸 **Preview: Ultra-Realistic Results**
-
 <div align="center">
 
 *Generate images with unprecedented realism using Flux models through ComfyUI's professional interface*
