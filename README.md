@@ -19,12 +19,6 @@
 
 <div align="center">
 
-| **Input Prompt** | **Generated Result** | **Generation Time** |
-|:---------------:|:-------------------:|:------------------:|
-| *"Professional headshot of a 25-year-old woman with natural lighting"* | ![Portrait Example](https://via.placeholder.com/300x300/667eea/ffffff?text=Ultra+Realistic+Portrait) | **~15 seconds** |
-| *"Elderly man with weathered features and kind eyes"* | ![Elderly Example](https://via.placeholder.com/300x300/764ba2/ffffff?text=Character+Detail) | **~15 seconds** |
-| *"Majestic landscape with mountains and lake, golden hour"* | ![Landscape Example](https://via.placeholder.com/300x300/f093fb/ffffff?text=Landscape+Quality) | **~20 seconds** |
-
 *Generate images with unprecedented realism using Flux models through ComfyUI's professional interface*
 
 </div>
