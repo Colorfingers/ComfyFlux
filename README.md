@@ -699,7 +699,7 @@ Full license information available in installation directory.
 
 ## 🚀 **Ready to Generate Amazing Images?**
 
-### [⬇️ Download Installer](https://github.com/your-repo/flux-comfyui-installer/releases) | [📖 View Documentation](https://github.com/your-repo/flux-comfyui-installer/wiki) | [💬 Join Community](https://discord.gg/comfyui)
+### [📖 View Documentation](https://github.com/your-repo/flux-comfyui-installer/wiki) | [💬 Join Community](https://discord.gg/comfyui)
 
 ---
 
