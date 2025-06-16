@@ -616,20 +616,125 @@ git push origin feature/improved-installation
 
 ---
 
-## 📜 **License & Legal**
+## 📜 **Comprehensive License Information**
 
-### **📄 Licensing:**
-- **Installer Code**: MIT License - Free for all use
-- **ComfyUI**: GPL License - Open source included
-- **Flux Models**: Various licenses (check model pages)
-- **Generated Images**: You own rights to your creations
+### **🎯 License Compliance Overview**
 
-### **⚖️ Usage Rights:**
-- ✅ **Personal use** - Unlimited generation
-- ✅ **Commercial use** - Check individual model licenses
-- ✅ **Modification** - Customize the installer and workflows
-- ✅ **Distribution** - Share the installer (follow licenses)
-- ✅ **Educational use** - Perfect for learning AI
+This project combines multiple open-source components and AI models, each with specific licensing requirements. **You CAN distribute compiled versions** with proper attribution and source code inclusion.
+
+### **🟢 Core Application Components (Permissive Licenses)**
+
+| **Component** | **License** | **Commercial Use** | **Attribution Required** | **License Link** |
+|:-------------|:-----------|:----------------:|:----------------------:|:---------------:|
+| **Electron** | [MIT](https://github.com/electron/electron/blob/main/LICENSE) | ✅ Yes | ✅ Yes | [Full License](https://opensource.org/licenses/MIT) |
+| **Node.js** | [MIT](https://github.com/nodejs/node/blob/main/LICENSE) | ✅ Yes | ✅ Yes | [Full License](https://opensource.org/licenses/MIT) |
+| **Express.js** | [MIT](https://github.com/expressjs/express/blob/master/LICENSE) | ✅ Yes | ✅ Yes | [Full License](https://opensource.org/licenses/MIT) |
+| **Python** | [PSF License](https://docs.python.org/3/license.html) | ✅ Yes | ✅ Yes | [Full License](https://docs.python.org/3/license.html) |
+| **PyTorch** | [BSD-3-Clause](https://github.com/pytorch/pytorch/blob/main/LICENSE) | ✅ Yes | ✅ Yes | [Full License](https://opensource.org/licenses/BSD-3-Clause) |
+| **NumPy** | [BSD-3-Clause](https://github.com/numpy/numpy/blob/main/LICENSE.txt) | ✅ Yes | ✅ Yes | [Full License](https://opensource.org/licenses/BSD-3-Clause) |
+| **Pillow** | [HPND](https://github.com/python-pillow/Pillow/blob/main/LICENSE) | ✅ Yes | ✅ Yes | [Full License](https://opensource.org/licenses/HPND) |
+| **Our Builder Script** | [MIT](https://opensource.org/licenses/MIT) | ✅ Yes | ✅ Yes | [Full License](https://opensource.org/licenses/MIT) |
+
+### **🟡 Copyleft Components (Source Code Required)**
+
+| **Component** | **License** | **Commercial Use** | **Source Code Required** | **License Link** |
+|:-------------|:-----------|:----------------:|:----------------------:|:---------------:|
+| **ComfyUI** | [GPL-3.0](https://github.com/comfyanonymous/ComfyUI/blob/master/LICENSE) | ✅ Yes | ⚠️ **YES** | [Full License](https://www.gnu.org/licenses/gpl-3.0.html) |
+
+**GPL-3.0 Compliance Requirements:**
+- ✅ **Commercial use allowed**
+- ⚠️ **Must provide ComfyUI source code** with distribution
+- ⚠️ **Must include GPL-3.0 license text**
+- ✅ **Can charge for distribution**
+- ✅ **Can modify the code**
+
+### **🟠 AI Model Licenses (Mixed Permissions)**
+
+| **Model** | **License** | **Commercial Use** | **Attribution** | **License Link** |
+|:---------|:-----------|:----------------:|:-------------:|:---------------:|
+| **FLUX.1-Schnell** | [Apache-2.0](https://huggingface.co/black-forest-labs/FLUX.1-schnell/blob/main/LICENSE.md) | ✅ Yes | ✅ Required | [Full License](https://www.apache.org/licenses/LICENSE-2.0) |
+| **FLUX.1-Dev** | [FLUX.1-dev Non-Commercial](https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/LICENSE.md) | ❌ **NO** | ✅ Required | [Custom License](https://huggingface.co/black-forest-labs/FLUX.1-dev/blob/main/LICENSE.md) |
+| **UltraSharp Upscaler** | [CC BY 4.0](https://github.com/Kim2091/UltraSharp) | ✅ Yes | ✅ Required | [Full License](https://creativecommons.org/licenses/by/4.0/) |
+| **Community LoRAs** | Varies | ❓ Check Each | ✅ Required | Per-model basis |
+
+### **⚖️ Distribution Rights Summary**
+
+#### **✅ What You CAN Do:**
+- **Distribute compiled .exe applications** commercially
+- **Charge for the software** (GPL allows this)
+- **Modify and improve** the codebase
+- **Create commercial services** using the application
+- **Bundle with safe models** (FLUX-Schnell, UltraSharp)
+
+#### **⚠️ What You MUST Do:**
+- **Include ComfyUI source code** (GPL-3.0 requirement)
+- **Provide all license texts** and attributions
+- **Document third-party licenses** clearly
+- **Allow users to access source** for GPL components
+- **Attribute all model creators** appropriately
+
+#### **❌ What You CANNOT Do:**
+- **Include FLUX.1-Dev** in commercial distributions
+- **Claim ownership** of third-party models
+- **Remove license attributions** from any component
+- **Distribute without source** for GPL components
+
+### **📋 Recommended Attribution Format**
+
+Include this in your application's About dialog and documentation:
+
+```
+Flux Sigma Vision Alpha
+Copyright (c) 2024 [Your Name/Organization]
+
+This application incorporates the following open-source software:
+
+• ComfyUI (GPL-3.0) - https://github.com/comfyanonymous/ComfyUI
+• Electron (MIT) - https://github.com/electron/electron  
+• PyTorch (BSD-3-Clause) - https://github.com/pytorch/pytorch
+• FLUX.1-Schnell by Black Forest Labs (Apache-2.0)
+• UltraSharp by Kim2091 (CC BY 4.0)
+
+Full license texts and source code available at:
+[Your Repository URL]/licenses/
+
+AI Models included under their respective licenses.
+Users are responsible for compliance with individual model terms.
+```
+
+### **🏛️ Legal Compliance Checklist**
+
+#### **For Distribution:**
+- [ ] **Include complete source code** for ComfyUI (GPL-3.0)
+- [ ] **Provide all license files** in `/licenses/` directory
+- [ ] **Document attribution** for all components
+- [ ] **Only include commercially-safe models** by default
+- [ ] **Test GPL compliance** with source availability
+
+#### **For Users:**
+- [ ] **Inform users** about model license restrictions
+- [ ] **Provide model license links** in application
+- [ ] **Allow easy model management** for user-added content
+- [ ] **Include disclaimer** about user responsibility for model compliance
+
+### **🔗 Essential License Resources**
+
+- **GPL-3.0 Guide**: https://www.gnu.org/licenses/quick-guide-gplv3.html
+- **MIT License**: https://opensource.org/licenses/MIT
+- **Apache-2.0**: https://www.apache.org/licenses/LICENSE-2.0
+- **Creative Commons**: https://creativecommons.org/licenses/
+- **OSI License List**: https://opensource.org/licenses/
+
+### **💡 Pro Tips for License Compliance**
+
+1. **Automate license collection** in your build script
+2. **Include license files** in application bundle
+3. **Document model sources** clearly for users
+4. **Provide easy source access** (GitHub/GitLab links)
+5. **Update attributions** when adding new components
+6. **Consult legal counsel** for commercial distributions if unsure
+
+**Bottom Line:** Yes, you can absolutely distribute compiled versions on GitLab with proper license attribution and source code inclusion! The GPL requirement for ComfyUI is easily satisfied by including the source code alongside your distribution.
 
 ### **🛡️ Privacy & Security:**
 - **Local processing** - Everything runs on your machine
