@@ -12,7 +12,6 @@
 [🚀 Quick Start](#-quick-start) • [📖 Documentation](#-documentation) • [🎮 User Guide](#-using-comfyui-with-flux) • [🔧 Troubleshooting](#-troubleshooting) • [🤝 Community](#-community--support)
 
 </div>
----
 
 ## ✨ **What Makes This Installer Special**
 
