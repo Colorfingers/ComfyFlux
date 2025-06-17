@@ -21,6 +21,10 @@ class FluxComfyUIInstaller:
         self.temp_dir = Path(tempfile.mkdtemp(prefix="flux_install_"))
         self.comfyui_dir = self.install_dir
         
+        # Track failed downloads and installs
+        self.failed_downloads = []
+        self.failed_installs = []
+        
         # Detect WSL environment
         self.is_wsl = self.detect_wsl()
         if self.is_wsl:
@@ -29,16 +33,19 @@ class FluxComfyUIInstaller:
         # Repository and model URLs
         self.comfyui_repo = "https://github.com/comfyanonymous/ComfyUI.git"
         
-        # Working model URLs
+        # Working model URLs - Updated December 2024
+        # Using ComfyUI-Org optimized versions that work out of the box
         self.flux_model_urls = {
-            "flux-schnell": "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors",
-            "flux-dev": "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors"
+            "flux-schnell-fp8": "https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors",
+            "flux-dev-fp8": "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors"
         }
         
-        # Additional useful models
+        # Additional models with working URLs
         self.additional_models = {
             "upscaler": "https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN_4x.pth",
-            "vae": "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors"
+            "vae": "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors",
+            "clip_l": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors",
+            "t5xxl": "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn.safetensors"
         }
         
     def detect_wsl(self):
@@ -297,78 +304,285 @@ This directory is located inside the ComfyUI folder at: ComfyUI/{dir_name}/
         # Create model directories
         models_dir = comfyui_dir / "models"
         checkpoints_dir = models_dir / "checkpoints"
+        clip_dir = models_dir / "clip"
         upscale_dir = models_dir / "upscale_models"
         vae_dir = models_dir / "vae"
         
-        for dir_path in [checkpoints_dir, upscale_dir, vae_dir]:
+        for dir_path in [checkpoints_dir, clip_dir, upscale_dir, vae_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
+            self.log(f"Created directory: {dir_path}")
         
         # User models directory inside ComfyUI
         user_models_dir = comfyui_dir / "user_models"
         user_models_dir.mkdir(exist_ok=True)
+        self.log(f"Created user directory: {user_models_dir}")
         
-        # Download Flux Schnell (smaller, faster model)
-        schnell_path = checkpoints_dir / "flux1-schnell.safetensors"
-        if not schnell_path.exists():
-            self.log("Downloading Flux Schnell model (this may take a while)...")
-            if self.download_with_progress(self.flux_model_urls["flux-schnell"], schnell_path):
-                # Also copy to user directory for easy access
-                user_schnell_path = user_models_dir / "flux1-schnell.safetensors"
-                shutil.copy2(schnell_path, user_schnell_path)
-            
-        # Download Flux Dev (larger, higher quality model) - optional
-        dev_path = checkpoints_dir / "flux1-dev.safetensors"
-        if not dev_path.exists():
-            self.log("Downloading Flux Dev model (optional, larger file)...")
-            if self.download_with_progress(self.flux_model_urls["flux-dev"], dev_path):
-                user_dev_path = user_models_dir / "flux1-dev.safetensors"
-                shutil.copy2(dev_path, user_dev_path)
+        # Track download results
+        downloads_attempted = 0
+        downloads_successful = 0
+        failed_downloads = []
+        
+        # Define all downloads to attempt
+        download_tasks = [
+            {
+                "name": "Flux Schnell FP8",
+                "url": self.flux_model_urls["flux-schnell-fp8"],
+                "path": checkpoints_dir / "flux1-schnell-fp8.safetensors",
+                "user_path": user_models_dir / "flux1-schnell-fp8.safetensors",
+                "required": True,
+                "description": "Main Flux model for fast generation"
+            },
+            {
+                "name": "Flux Dev FP8",
+                "url": self.flux_model_urls["flux-dev-fp8"],
+                "path": checkpoints_dir / "flux1-dev-fp8.safetensors",
+                "user_path": user_models_dir / "flux1-dev-fp8.safetensors",
+                "required": False,
+                "description": "Higher quality Flux model (optional)"
+            },
+            {
+                "name": "CLIP-L Text Encoder",
+                "url": self.additional_models["clip_l"],
+                "path": clip_dir / "clip_l.safetensors",
+                "user_path": None,
+                "required": False,
+                "description": "Text encoder for better prompt understanding"
+            },
+            {
+                "name": "T5-XXL Text Encoder",
+                "url": self.additional_models["t5xxl"],
+                "path": clip_dir / "t5xxl_fp8_e4m3fn.safetensors",
+                "user_path": None,
+                "required": False,
+                "description": "Advanced text encoder for complex prompts"
+            },
+            {
+                "name": "Flux VAE",
+                "url": self.additional_models["vae"],
+                "path": vae_dir / "ae.safetensors",
+                "user_path": None,
+                "required": False,
+                "description": "Variational autoencoder for image processing"
+            },
+            {
+                "name": "ESRGAN Upscaler",
+                "url": self.additional_models["upscaler"],
+                "path": upscale_dir / "ESRGAN_4x.pth",
+                "user_path": None,
+                "required": False,
+                "description": "4x image upscaling model"
+            }
+        ]
+        
+        # Attempt all downloads
+        for task in download_tasks:
+            if task["path"].exists():
+                self.log(f"{task['name']} already exists, skipping download")
+                continue
                 
-        # Download VAE
-        vae_path = vae_dir / "ae.safetensors"
-        if not vae_path.exists():
-            self.log("Downloading Flux VAE...")
-            self.download_with_progress(self.additional_models["vae"], vae_path)
+            self.log(f"Downloading {task['name']}...")
+            downloads_attempted += 1
             
-        # Download upscaler
-        upscaler_path = upscale_dir / "ESRGAN_4x.pth"
-        if not upscaler_path.exists():
-            self.log("Downloading upscaler model...")
-            self.download_with_progress(self.additional_models["upscaler"], upscaler_path)
+            if self.download_with_progress(task["url"], task["path"]):
+                downloads_successful += 1
+                # Copy to user directory if specified
+                if task["user_path"]:
+                    try:
+                        shutil.copy2(task["path"], task["user_path"])
+                        self.log(f"Copied {task['name']} to user directory")
+                    except Exception as e:
+                        self.log(f"WARNING: Could not copy {task['name']} to user directory: {e}")
+            else:
+                failed_downloads.append({
+                    "name": task["name"],
+                    "url": task["url"],
+                    "required": task["required"],
+                    "description": task["description"]
+                })
+                
+        # Store failed downloads for later reporting
+        self.failed_downloads = failed_downloads
+        
+        # Report download summary
+        self.log(f"Download Summary: {downloads_successful}/{downloads_attempted} successful")
+        
+        if failed_downloads:
+            self.log(f"WARNING: {len(failed_downloads)} downloads failed (will be reported at end of installation)")
+        
+        # Only fail installation if ALL critical models failed
+        critical_models_exist = any([
+            (checkpoints_dir / "flux1-schnell-fp8.safetensors").exists(),
+            (checkpoints_dir / "flux1-dev-fp8.safetensors").exists()
+        ])
+        
+        if not critical_models_exist and downloads_attempted > 0:
+            self.log("CRITICAL: No Flux models were downloaded successfully!")
+            self.log("Installation will continue, but you'll need to manually download models")
+            # Don't raise exception - let installation continue
+        
+        self.log("Model download phase completed")
+        
+    def report_failed_downloads(self):
+        """Report all failed downloads at the end of installation"""
+        if not hasattr(self, 'failed_downloads') or not self.failed_downloads:
+            return
+            
+        self.log("")
+        self.log("=" * 60)
+        self.log("DOWNLOAD FAILURES SUMMARY")
+        self.log("=" * 60)
+        self.log(f"The following {len(self.failed_downloads)} items failed to download:")
+        self.log("")
+        
+        for item in self.failed_downloads:
+            status = "REQUIRED" if item["required"] else "OPTIONAL"
+            self.log(f"Failed: {item['name']} ({status})")
+            self.log(f"   Description: {item['description']}")
+            self.log(f"   URL: {item['url']}")
+            self.log("")
+            
+        self.log("MANUAL DOWNLOAD INSTRUCTIONS:")
+        self.log("You can manually download these files and place them in the correct directories:")
+        self.log("")
+        
+        for item in self.failed_downloads:
+            if "flux1-schnell-fp8" in item["name"]:
+                self.log(f"• {item['name']}: Place in ComfyUI/models/checkpoints/")
+                self.log(f"  Also copy to: ComfyUI/user_models/")
+            elif "flux1-dev-fp8" in item["name"]:
+                self.log(f"• {item['name']}: Place in ComfyUI/models/checkpoints/")
+                self.log(f"  Also copy to: ComfyUI/user_models/")
+            elif "clip" in item["name"].lower():
+                self.log(f"• {item['name']}: Place in ComfyUI/models/clip/")
+            elif "vae" in item["name"].lower():
+                self.log(f"• {item['name']}: Place in ComfyUI/models/vae/")
+            elif "upscaler" in item["name"].lower():
+                self.log(f"• {item['name']}: Place in ComfyUI/models/upscale_models/")
+                
+        self.log("")
+        self.log("ALTERNATIVE SOURCES:")
+        self.log("• ComfyUI Examples: https://comfyanonymous.github.io/ComfyUI_examples/flux/")
+        self.log("• Hugging Face Comfy-Org: https://huggingface.co/Comfy-Org")
+        self.log("• Direct links in the URLs above")
+        self.log("")
+        self.log("After manually downloading, restart ComfyUI to detect the new models.")
+        self.log("=" * 60)
             
     def download_with_progress(self, url, path):
-        """Download a file with progress indication"""
+        """Download a file with progress indication and error handling"""
         if not url:
             self.log(f"WARNING: Skipping download for {path.name} - URL not available")
             return False
             
         try:
-            self.log(f"Downloading {path.name}...")
+            self.log(f"Downloading {path.name} from {url}")
             
             # Ensure parent directory exists
             path.parent.mkdir(parents=True, exist_ok=True)
             
+            # Test URL accessibility first
+            try:
+                import urllib.request
+                request = urllib.request.Request(url, method='HEAD')
+                response = urllib.request.urlopen(request, timeout=30)
+                content_length = response.headers.get('content-length')
+                if content_length:
+                    size_mb = int(content_length) / (1024 * 1024)
+                    self.log(f"File size: {size_mb:.1f} MB")
+                else:
+                    self.log("File size: Unknown")
+            except Exception as e:
+                self.log(f"WARNING: Could not get file info: {e}")
+                # Continue with download anyway
+            
             def show_progress(block_num, block_size, total_size):
                 if total_size > 0:
                     percent = min(100, (block_num * block_size * 100) // total_size)
-                    if block_num % 100 == 0:  # Show progress every 100 blocks
-                        downloaded = block_num * block_size
+                    if block_num % 50 == 0 or percent >= 100:  # Show progress every 50 blocks or at completion
+                        downloaded_mb = (block_num * block_size) / (1024 * 1024)
                         total_mb = total_size / (1024 * 1024)
-                        downloaded_mb = downloaded / (1024 * 1024)
                         self.log(f"  Progress: {percent}% ({downloaded_mb:.1f}/{total_mb:.1f} MB)")
             
             urllib.request.urlretrieve(url, path, reporthook=show_progress)
-            self.log(f"SUCCESS Downloaded {path.name}")
-            return True
+            
+            # Verify download completed
+            if path.exists() and path.stat().st_size > 0:
+                file_size_mb = path.stat().st_size / (1024 * 1024)
+                self.log(f"SUCCESS Downloaded {path.name} ({file_size_mb:.1f} MB)")
+                return True
+            else:
+                self.log(f"FAILED Download incomplete: {path.name}")
+                if path.exists():
+                    path.unlink()
+                return False
             
         except Exception as e:
             self.log(f"FAILED to download {path.name}: {e}")
+            self.log(f"URL was: {url}")
+            # Remove partial file if it exists
             if path.exists():
                 try:
                     path.unlink()
                 except:
                     pass
             return False
+    
+    def create_basic_workflow(self):
+        """Create basic Flux Schnell FP8 workflow for fast generation"""
+        return {
+            "1": {
+                "inputs": {"ckpt_name": "flux1-schnell-fp8.safetensors"},
+                "class_type": "CheckpointLoaderSimple",
+                "_meta": {"title": "Load Flux Schnell FP8"}
+            },
+            "2": {
+                "inputs": {
+                    "text": "A beautiful portrait with natural lighting, photorealistic, high detail",
+                    "clip": ["1", 1]
+                },
+                "class_type": "CLIPTextEncode",
+                "_meta": {"title": "Positive Prompt"}
+            },
+            "3": {
+                "inputs": {
+                    "text": "blurry, low quality, distorted, cartoon, anime",
+                    "clip": ["1", 1]
+                },
+                "class_type": "CLIPTextEncode", 
+                "_meta": {"title": "Negative Prompt"}
+            },
+            "4": {
+                "inputs": {"width": 1024, "height": 1024, "batch_size": 1},
+                "class_type": "EmptyLatentImage",
+                "_meta": {"title": "Image Dimensions"}
+            },
+            "5": {
+                "inputs": {
+                    "seed": 42,
+                    "steps": 4,
+                    "cfg": 1.0,
+                    "sampler_name": "euler",
+                    "scheduler": "simple", 
+                    "denoise": 1.0,
+                    "model": ["1", 0],
+                    "positive": ["2", 0],
+                    "negative": ["3", 0],
+                    "latent_image": ["4", 0]
+                },
+                "class_type": "KSampler",
+                "_meta": {"title": "Generate Image"}
+            },
+            "6": {
+                "inputs": {"samples": ["5", 0], "vae": ["1", 2]},
+                "class_type": "VAEDecode",
+                "_meta": {"title": "Decode Latent"}
+            },
+            "7": {
+                "inputs": {"images": ["6", 0], "filename_prefix": "flux_basic"},
+                "class_type": "SaveImage",
+                "_meta": {"title": "Save Image"}
+            }
+        }
             
     def create_flux_workflows(self, comfyui_dir):
         """Create optimized Flux workflows"""
@@ -452,53 +666,27 @@ This directory is located inside the ComfyUI folder at: ComfyUI/{dir_name}/
         
     def create_portrait_workflow(self):
         """Create a portrait-optimized workflow"""
-        return {
-            "1": {
-                "inputs": {"ckpt_name": "flux1-schnell.safetensors"},
-                "class_type": "CheckpointLoaderSimple",
-                "_meta": {"title": "Load Flux"}
-            },
-            "2": {
-                "inputs": {
-                    "text": "Professional headshot portrait, beautiful eyes, natural skin texture, soft lighting, shallow depth of field, photorealistic, high detail, 8k",
-                    "clip": ["1", 1]
-                },
-                "class_type": "CLIPTextEncode",
-                "_meta": {"title": "Portrait Prompt"}
-            },
-            "3": {
-                "inputs": {
-                    "text": "blurry, low quality, distorted, plastic skin, artificial, bad anatomy, deformed",
-                    "clip": ["1", 1]
-                },
-                "class_type": "CLIPTextEncode",
-                "_meta": {"title": "Negative"}
-            },
-            "4": {
-                "inputs": {"width": 832, "height": 1216, "batch_size": 1},
-                "class_type": "EmptyLatentImage",
-                "_meta": {"title": "Portrait Dimensions"}
-            },
-            "5": {
-                "inputs": {
-                    "seed": 123, "steps": 4, "cfg": 1.0,
-                    "sampler_name": "euler", "scheduler": "simple", "denoise": 1.0,
-                    "model": ["1", 0], "positive": ["2", 0], "negative": ["3", 0], "latent_image": ["4", 0]
-                },
-                "class_type": "KSampler",
-                "_meta": {"title": "Generate"}
-            },
-            "6": {
-                "inputs": {"samples": ["5", 0], "vae": ["1", 2]},
-                "class_type": "VAEDecode",
-                "_meta": {"title": "Decode"}
-            },
-            "7": {
-                "inputs": {"images": ["6", 0], "filename_prefix": "flux_portrait"},
-                "class_type": "SaveImage",
-                "_meta": {"title": "Save"}
+        workflow = self.create_basic_workflow()
+        
+        # Modify for portrait optimization
+        workflow["2"]["inputs"]["text"] = "Professional headshot portrait, beautiful eyes, natural skin texture, soft lighting, shallow depth of field, photorealistic, high detail, 8k"
+        workflow["4"]["inputs"]["width"] = 832
+        workflow["4"]["inputs"]["height"] = 1216
+        workflow["5"]["inputs"]["steps"] = 4
+        workflow["7"]["inputs"]["filename_prefix"] = "flux_portrait"
+        
+        # Add metadata
+        workflow["_meta"] = {
+            "title": "Flux Portrait Workflow",
+            "description": "Optimized for portrait photography with 2:3 aspect ratio",
+            "recommended_settings": {
+                "steps": 4,
+                "cfg": 1.0,
+                "dimensions": "832x1216"
             }
         }
+        
+        return workflow
         
     def create_landscape_workflow(self):
         """Create a landscape-optimized workflow"""
@@ -802,6 +990,8 @@ Installation completed: {self.install_dir}
                 self.download_flux_models(comfyui_dir)
             else:
                 self.log("Skipping model downloads (--skip-models flag)")
+                # Initialize empty failed downloads for consistency
+                self.failed_downloads = []
             
             # Step 7: Create workflows
             self.create_flux_workflows(comfyui_dir)
@@ -814,6 +1004,9 @@ Installation completed: {self.install_dir}
             
             # Step 10: Create user guide
             self.create_user_guide()
+            
+            # Step 11: Report any failed downloads
+            self.report_failed_downloads()
             
             self.log("SUCCESS Installation completed successfully!")
             self.log(f"Installation directory: {self.install_dir}")
